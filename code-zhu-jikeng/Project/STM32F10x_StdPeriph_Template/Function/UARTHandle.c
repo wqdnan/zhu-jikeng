@@ -125,7 +125,7 @@ void analyzeFrameContent(uint8_t * rxStr,uartCtntStruct * uartData)
 					uartData->rxFrameCtnt[bias++] = pData[i];//rxStr[i+5];
 				break;
 			}
-			case 0x0D://按照每两个字节是水位值、流量值
+			case 0x0D://按照每两个字节是水位值、流量值或者应力频率值或者倾角x轴角度、y轴角度
 			{
 				for(i=0; i<dataLen; i++)
 				{

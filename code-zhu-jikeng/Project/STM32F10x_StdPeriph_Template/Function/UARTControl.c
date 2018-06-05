@@ -26,6 +26,7 @@
 void regularTimeDo(uartCtntStruct * uartData)
 {
 	uint8_t i = 0;
+	uint8_t j = 0;
 	static const uint8_t CHECK_DATA_TIME = 5-1;
 	static const uint8_t MOBILE_DATA_TIME = 5-1;
 	static uint8_t checkDataCnt = 0;
@@ -37,6 +38,13 @@ void regularTimeDo(uartCtntStruct * uartData)
 		checkDataCnt = 0;
 		uartData->slaveTransFlag = enFlag;
 		uartData->crntHandleSlaveNum = 0;
+		if(uartData->workTypeArray[uartData->slaveTypeCheckFlag] == ANGLE_CHECK)
+		{
+			//先清零之前的倾角传感器数据中的值，全部
+			for(i=0;i<SLAVE_MAXNUM;i++)
+				for(j=0;j<ANGLE_CHECK_NUM;j++)
+					uartData->angleXYReal[i][j] = 0;
+		}
 	}
 	if(mobileDataCnt < MOBILE_DATA_TIME)
 	{
@@ -93,9 +101,8 @@ e_state setParaData(uartCtntStruct * uartData)
 			uartData->strainFreReal[uartData->crntSlaveNum-1][1] = uartData->rxFrameCtnt[2]*100+uartData->rxFrameCtnt[3];
 			break;
 		}
-
 	}
-	if(uartData->crntSlaveNum >= SLAVE_MAXNUM)
+	if(uartData->slaveType == uartData->workTypeArray[uartData->slaveTypeCheckFlag])//修改为当前接收的帧为倾角模块的数据帧，则做单独回复，其他类型做统一一次性回复
 	{
 		result = enFlag;
 		uartData->fucNum = 0x14;//准备回复DSP功能数据
@@ -185,6 +192,7 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 	uint8_t i = 0,j = 0;
 	uint8_t bias = 0;
 	uint8_t cnt_num = 0;
+	uint8_t temp = 0;
 	//根据标志位进行数据帧准备
 	switch(uartData->fucNum)
 	{
@@ -192,7 +200,6 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 		{
 			if(uartData->frameTypeFlag == FIRST_HALF)
 			{
-
 				if(SLAVE_MAXNUM > 48)
 				{
 					cnt_num = 48;
@@ -213,19 +220,24 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 						uartData->txFrameCtnt[bias++] += (uartData->waterFlowReal[i]/100%10);
 						uartData->txFrameCtnt[bias] =    (uartData->waterFlowReal[i]/10%10)<<4;
 						uartData->txFrameCtnt[bias++] += (uartData->waterFlowReal[i]%10);
+
 					}
+					uartData->crntHandleSlaveNum = 0x20;
 					break;
-				case ANGLE_CHECK:
-					for(i=0; i<cnt_num; i++)
+				case ANGLE_CHECK://倾角传感器设定为根据从机号单独传递，则不考虑从机总数量的问题
+					temp = uartData->crntSlaveNum-1;
+					for(j=0; j<(ANGLE_CHECK_NUM*2); j+=2)
 					{
-						for(j=0; j<ANGLE_CHECK_NUM; j++)
-						{
-							uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[i][j]/1000%10)<<4;//单位：0.01m
-							uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[i][j]/100%10);
-							uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[i][j]/10%10)<<4;
-							uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[i][j]%10);
-						}
+						uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[temp][j]/1000%10)<<4;//单位：0.01m
+						uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[temp][j]/100%10);
+						uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[temp][j]/10%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[temp][j]%10);
+						uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[temp][j+1]/1000%10)<<4;//单位：0.01m
+						uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[temp][j+1]/100%10);
+						uartData->txFrameCtnt[bias] =    (uartData->angleXYReal[temp][j+1]/10%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->angleXYReal[temp][j+1]%10);
 					}
+					uartData->crntHandleSlaveNum = uartData->crntSlaveNum;
 					break;
 				case STRAIN_CHECK:
 					for(i=0; i<cnt_num; i++)
@@ -239,10 +251,9 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 						uartData->txFrameCtnt[bias] =    (uartData->strainFreReal[i][1]/10%10)<<4;
 						uartData->txFrameCtnt[bias++] += (uartData->strainFreReal[i][1]%10);
 					}
+					uartData->crntHandleSlaveNum = 0x20;
 					break;
 				}
-
-				uartData->crntHandleSlaveNum = 0x20;
 			}
 			else if(uartData->frameTypeFlag == SECOND_HALF)
 			{

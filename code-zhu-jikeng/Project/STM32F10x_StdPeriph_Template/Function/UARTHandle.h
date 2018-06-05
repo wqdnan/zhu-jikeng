@@ -24,15 +24,15 @@ typedef struct
 	uint16_t waterLevelReal[SLAVE_MAXNUM];      //水位实时值   直接就是接收到的数据  在传递中比实际数值都扩大了100倍 单位：0.01m
 	uint16_t waterFlowReal[SLAVE_MAXNUM];       //流量实时值，扩大10倍 单位：0.1立方米
 	uint16_t strainFreReal[SLAVE_MAXNUM][2];    //应力计频率值，0-频率1,1-频率2
-	uint16_t angleXYReal[SLAVE_MAXNUM][ANGLE_CHECK_NUM];     //倾角角度值，偶数下标-x倾角，奇数下标-y倾角
+	uint16_t angleXYReal[SLAVE_MAXNUM][100];     //倾角角度值，偶数下标-x倾角，奇数下标-y倾角 最多50组
 	uint8_t relayState[32];                    //记录继电器动作状态 0~4位对应Q1~Q5状态  0-断开  1-闭合
 	uint8_t slaveType;                         //当前接收到的从机类型
 	uint8_t crntSlaveNum;                      //当前接收到的从机号
 	uint8_t fucNum;                            //功能码
 	uint8_t masterNum;                         //主机编号，大部分时间都是0x1F,当stm32->DSP 为00
-	uint8_t rxFrameCtnt[33];                   //接收组帧数据内容
+	uint8_t rxFrameCtnt[200];                   //接收组帧数据内容，最多可以一次性接收50个倾角模块的角度值
 	uint8_t rxFrameCtntNum;                     //接收组帧数据内容字节长度
-	uint8_t txFrameCtnt[192];                   //发送组帧数据内容
+	uint8_t txFrameCtnt[220];                   //发送组帧数据内容
 	uint8_t txFrameCtntNum;                     //发送组帧数据内容字节长度
 	frameTypeEnum frameTypeFlag;                //发送帧类型 前一半-FIRST_HALF，后一半-SECOND_HALF
 	uint8_t crntHandleSlaveNum;                //在从机轮询中，操作的从机号

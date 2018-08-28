@@ -12,7 +12,7 @@
 #define TIM2_CNT_1S 100		//TIM2定时1s所需时间
 
 #define TIM3_CCR1_VAL 100   //定时单位为1us，定时频率为10KHz
-
+#define TIM4_CCR1_VAL 100   //定时单位为1us，定时长度为0.1ms
 
 typedef  struct
 {
@@ -32,6 +32,7 @@ void myDelay_ms(uint16_t cnt);
 
 void TIM2_IRQHandler(void);
 void TIM3_IRQHandler(void);
+void TIM4_IRQHandler(void);
 
 
 

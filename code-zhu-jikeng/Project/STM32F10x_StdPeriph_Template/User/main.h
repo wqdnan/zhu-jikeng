@@ -14,7 +14,9 @@ typedef enum
 #define MASTERNUM 0x1F
 
 
-#define SLAVE_MAXNUM 2
-#define ANGLE_CHECK_NUM 5   //每个倾角从机下属的倾角传感器数量
+#define SLAVE_MAXNUM 25
+#define ANGLE_CHECK_NUM 25   //每个倾角从机下属的倾角传感器数量
+
+#define ANGLE_TYPE 2
 
 #endif

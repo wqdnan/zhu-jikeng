@@ -8,15 +8,19 @@
 #define SLAVE_UART               USART2
 #define WIFI_UART                UART4
 #define TOP_UART                 USART1
-//#define USART1
+//#define USART1   与上位机进行通信的
 
 #define USART1_GPIO              GPIOA
 #define USART1_CLK               RCC_APB2Periph_USART1
 #define USART1_GPIO_CLK          RCC_APB2Periph_GPIOA
 #define USART1_RxPin             GPIO_Pin_10
 #define USART1_TxPin             GPIO_Pin_9
-#define RXBUF1_LENGTH			 100
-#define TXBUF1_LENGTH			 100
+#define RXBUF1_LENGTH			 120
+#define TXBUF1_LENGTH			 120
+#define UP485_pin                GPIO_Pin_11
+
+#define RX_DE_UP()  GPIO_SetBits(USART1_GPIO,UP485_pin)
+#define TX_DE_UP()  GPIO_ResetBits(USART1_GPIO,UP485_pin)
 
 //#define USART2  主机和从机进行通信
 
@@ -25,8 +29,8 @@
 #define USART2_GPIO_CLK          RCC_APB2Periph_GPIOA
 #define USART2_RxPin             GPIO_Pin_3
 #define USART2_TxPin             GPIO_Pin_2
-#define RXBUF2_LENGTH			 100
-#define TXBUF2_LENGTH			 100
+#define RXBUF2_LENGTH			 120
+#define TXBUF2_LENGTH			 120
 #define DE485_pin                GPIO_Pin_4
 
 #define RX_DE1()  GPIO_SetBits(USART2_GPIO,DE485_pin)
@@ -38,8 +42,8 @@
 #define USART3_GPIO_CLK          RCC_APB2Periph_GPIOB
 #define USART3_RxPin             GPIO_Pin_11
 #define USART3_TxPin             GPIO_Pin_10
-#define RXBUF3_LENGTH			 100
-#define TXBUF3_LENGTH			 100
+#define RXBUF3_LENGTH			 120
+#define TXBUF3_LENGTH			 120
 
 //#define  USART4               stm32主机和wifi通信交互
 #define UART4_GPIO              GPIOC
@@ -47,8 +51,8 @@
 #define UART4_GPIO_CLK          RCC_APB2Periph_GPIOC
 #define UART4_RxPin              GPIO_Pin_11
 #define UART4_TxPin              GPIO_Pin_10
-#define RXBUF4_LENGTH			 100
-#define TXBUF4_LENGTH			 100
+#define RXBUF4_LENGTH			 120
+#define TXBUF4_LENGTH			 120
 
 //#define  USART5
 #define UART5_GPIO_T            GPIOB
@@ -58,8 +62,8 @@
 #define UART5_GPIO_CLK_R        RCC_APB2Periph_GPIOD
 #define UART5_RxPin              GPIO_Pin_2
 #define UART5_TxPin              GPIO_Pin_12
-#define RXBUF5_LENGTH			 100
-#define TXBUF5_LENGTH			 100
+#define RXBUF5_LENGTH			 120
+#define TXBUF5_LENGTH			 120
 
 #define FRAME_START              0xAA
 #define FRAME_END                0xBB

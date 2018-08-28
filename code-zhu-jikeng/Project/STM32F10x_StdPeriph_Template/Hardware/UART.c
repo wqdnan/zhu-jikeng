@@ -1,4 +1,5 @@
 #include "UART.h"
+#include "ModBus.h"
 
 /**
 ******************************************************************************
@@ -60,8 +61,12 @@ void UART1Init(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_Init(USART1_GPIO, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = UP485_pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(USART1_GPIO, &GPIO_InitStructure);
+	RX_DE_UP();
 
-	USART_InitStructure.USART_BaudRate = 115200;
+	USART_InitStructure.USART_BaudRate = 9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -239,7 +244,10 @@ void UART5Init(void)
 void SendStr(USART_TypeDef* USARTx,uint8_t *str,uint8_t length)
 {
 	uint8_t i = 0,j = 0;
-	TX_DE1();
+	if(USARTx == TOP_UART)
+		TX_DE_UP();
+	else if(USARTx == SLAVE_UART)
+		TX_DE1();
 	for(i=0;i<20;i++)//等待使能信号稳定,如果是i<10,则不能稳定
 		for(j=0; j<5; j++);
 	for(i=0;i<length;i++)
@@ -247,9 +255,12 @@ void SendStr(USART_TypeDef* USARTx,uint8_t *str,uint8_t length)
 		USART_SendData(USARTx, str[i]);
 		while(USART_GetFlagStatus(USARTx, USART_FLAG_TXE) == RESET);//等待发送完成
 	}
-	for(i=0;i<20;i++)//等待使能信号稳定,如果是i<10,则不能稳定
-		for(j=0; j<45; j++);
-	RX_DE1();
+	for(i=0;i<100;i++)//等待使能信号稳定,如果是i<10,则不能稳定 20
+		for(j=0; j<100; j++); //45s
+	if(USARTx == TOP_UART)
+		RX_DE_UP();
+	else if(USARTx == SLAVE_UART)
+		RX_DE1();
 }
 /**
   * @brief  选择某个串口发送指定的字符串.
@@ -266,7 +277,7 @@ void USART1_IRQHandler(void)
 		 USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 		 temp = USART_ReceiveData(USART1);
 //		 USART_SendData(USART1,temp);
-
+		 ModBus_Rcv_Callback(temp);
 
 	  }
 }

@@ -36,3 +36,7 @@
 .\stm3210e-eval\main.o: ..\Function\UARTControl.h
 .\stm3210e-eval\main.o: ..\Function\UARTHandle.h
 .\stm3210e-eval\main.o: C:\Program Files (x86)\Keil_V5\ARM\ARMCC\Bin\..\include\String.h
+.\stm3210e-eval\main.o: ..\Hardware\wwdg.h
+.\stm3210e-eval\main.o: ..\Modbus\ModBus.h
+.\stm3210e-eval\main.o: ..\Modbus\CRCtable.h
+.\stm3210e-eval\main.o: ..\Modbus\ModBus_bsp.h

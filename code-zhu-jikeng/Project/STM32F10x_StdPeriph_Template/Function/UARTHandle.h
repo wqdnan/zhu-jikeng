@@ -10,6 +10,7 @@
 #define WATER_DEPTH_CHECK 1  //水位监测
 #define ANGLE_CHECK 2        //倾角监测
 #define STRAIN_CHECK 3       //应力计检测
+#define TEMPERATURE_CHECK 4        //温度测量
 
 
 #define FUCMAXNUM 20
@@ -25,6 +26,8 @@ typedef struct
 	uint16_t waterFlowReal[SLAVE_MAXNUM];       //流量实时值，扩大10倍 单位：0.1立方米
 	uint16_t strainFreReal[SLAVE_MAXNUM][2];    //应力计频率值，0-频率1,1-频率2
 	uint16_t angleXYReal[SLAVE_MAXNUM][100];     //倾角角度值，偶数下标-x倾角，奇数下标-y倾角 最多50组
+	uint16_t tprtureReal[SLAVE_MAXNUM][2];         //温度实时值，直接传输，不做处理
+	uint8_t angleCalibration[2];               //记录倾角标定信息，0-标定标志，1-标定从机
 	uint8_t relayState[32];                    //记录继电器动作状态 0~4位对应Q1~Q5状态  0-断开  1-闭合
 	uint8_t slaveType;                         //当前接收到的从机类型
 	uint8_t crntSlaveNum;                      //当前接收到的从机号

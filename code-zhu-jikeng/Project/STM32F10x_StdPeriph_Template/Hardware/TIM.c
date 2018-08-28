@@ -1,4 +1,5 @@
 #include "TIM.h"
+#include "ModBus.h"
 
 /**
 ******************************************************************************
@@ -117,7 +118,40 @@ void TIM3Init(void)
   */
 void TIM4Init(void)
 {
+	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+	TIM_OCInitTypeDef  TIM_OCInitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+	uint16_t PrescalerValue =  0;
 
+	RCC_PCLK1Config(RCC_HCLK_Div4);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);//使用第0组，组优先级最高
+	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 5;//主优先级1，从优先级0，较高的优先级
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
+	/* Compute the prescaler value */
+	PrescalerValue = (uint16_t) (SystemCoreClock / 2000000) - 1;//设定计数单位频率1MHz
+	TIM_TimeBaseStructure.TIM_Period = 65535;//该值没有实际作用
+	TIM_TimeBaseStructure.TIM_Prescaler = 0;
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
+	TIM_PrescalerConfig(TIM4, PrescalerValue, TIM_PSCReloadMode_Immediate);
+
+	/* Output Compare Timing Mode configuration: Channel1 */
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Timing;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_Pulse = TIM4_CCR1_VAL;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OC1Init(TIM4, &TIM_OCInitStructure);
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Disable);
+
+	TIM_ITConfig(TIM4, TIM_IT_CC1, ENABLE);
+	TIM_Cmd(TIM4, ENABLE);
 }
 
 /**
@@ -195,6 +229,28 @@ void TIM3_IRQHandler(void)
 
 }
 
+/**
+  * @brief  TIM4对应的中断函数，用于modbus接收一帧数据的检测
+  * @param  None
+  * @retval None
+  *
+  */
+void TIM4_IRQHandler(void)
+{
+	static uint16_t capture = 0;
+	static uint16_t spdHoriCnt = 0;
+	static uint16_t spdVertCnt = 0;
+	if (TIM_GetITStatus(TIM4, TIM_IT_CC1) != RESET)
+	{
+		TIM_ClearITPendingBit(TIM4, TIM_IT_CC1);
+		//GPIO_WriteBit(GPIOB, GPIO_Pin_12, (BitAction)(1 - GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_12)));
+		capture = TIM_GetCapture1(TIM4);
+		TIM_SetCompare1(TIM4, capture + TIM4_CCR1_VAL);
+		//功能函数添加
+		ModBus_TIM_Callback();
 
+	}
+
+}
 
 

@@ -39,8 +39,12 @@
 ".\stm3210e-eval\tim.o"
 ".\stm3210e-eval\uart.o"
 ".\stm3210e-eval\spi.o"
+".\stm3210e-eval\wwdg.o"
 ".\stm3210e-eval\uarthandle.o"
 ".\stm3210e-eval\uartcontrol.o"
+".\stm3210e-eval\modbus.o"
+".\stm3210e-eval\modbus_bsp.o"
+".\stm3210e-eval\modbus_user.o"
 --library_type=microlib --strict --scatter ".\STM3210E-EVAL\STM3210E-EVAL.sct"
 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

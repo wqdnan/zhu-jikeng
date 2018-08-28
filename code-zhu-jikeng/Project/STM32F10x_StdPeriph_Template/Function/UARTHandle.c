@@ -37,7 +37,7 @@ e_state pollSlaveHandle(uartCtntStruct * slaveData,uint8_t * txBuffer)
 	if(slaveData->crntHandleSlaveNum < SLAVE_MAXNUM)
 	{
 		slaveData->crntHandleSlaveNum ++;
-
+		//to be done
 		for(i=0;i<32;i++)
 		{
 			slaveData->txFrameCtnt[bias++] = slaveData->relayState[i];
@@ -100,8 +100,9 @@ void getDataToFrame(uint8_t *dest,uint8_t * destLength,uint8_t fctnNum,uint8_t m
   *         sFctnType-从机的工作状态指示
   *         mFctnType-主机的工作状态指示
   * @retval None
-  * 格式：功能码|主机编号|从机编号|数据长度|数据内容|校验和
-  * 字节数      1     1       1       1      不定        1
+  *         0      1      2       3       4     5
+  * 格式：功能码|主机编号|从机类型|从机编号|数据长度|数据内容|校验和
+  * 字节数      1     1       1       1      1       不定        1
   */
 void analyzeFrameContent(uint8_t * rxStr,uartCtntStruct * uartData)
 {
@@ -119,10 +120,15 @@ void analyzeFrameContent(uint8_t * rxStr,uartCtntStruct * uartData)
 		uartData->fucNum = rxStr[0];
 		switch(uartData->fucNum)
 		{
-			case 0x11://全部是阀控制命令
+			case 0x11://全部是阀控制命令，还有倾角标定信息
 			{
-				for(i=0; i<dataLen; i++)
-					uartData->rxFrameCtnt[bias++] = pData[i];//rxStr[i+5];
+				if((rxStr[2] == ANGLE_TYPE) && (rxStr[3] == 00))
+				{
+					uartData->angleCalibration[0] = enFlag;
+					uartData->angleCalibration[1] = rxStr[5];
+				}
+//				for(i=0; i<dataLen; i++)
+//					uartData->rxFrameCtnt[bias++] = pData[i];//rxStr[i+5];
 				break;
 			}
 			case 0x0D://按照每两个字节是水位值、流量值或者应力频率值或者倾角x轴角度、y轴角度

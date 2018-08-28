@@ -1,0 +1,10 @@
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei&qjiao&wdu master V1.0 (author wqdnan) ********************
+1. 与四个类型从机进行互联通信
+2. 与上位机进行联调，测试中
+

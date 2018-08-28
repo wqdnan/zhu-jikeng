@@ -20,7 +20,9 @@
 #include "main.h"
 #include "SPI.h"
 #include "UARTControl.h"
+#include "wwdg.h"
 
+#include "ModBus.h"
 
 
 /* Private macro -------------------------------------------------------------*/
@@ -36,16 +38,24 @@ uint8_t temp = 0;
 int main(void)
 {
 	e_state fucFlag = rstFlag;
+	uint8_t i = 0,j = 0;
   TIM2Init();
   UART2Init();
   UART3Init();
   pinTest();
-  uartData.workTypeArray[0] = ANGLE_CHECK;//STRAIN_CHECK;//使能应力计检测
-//	uartData.workTypeArray[1] = WATER_DEPTH_CHECK;
-//	uartData.workTypeArray[2] = ANGLE_CHECK;
+  uartData.workTypeArray[0] = STRAIN_CHECK;//使能应力计检测
+  uartData.workTypeArray[1] = WATER_DEPTH_CHECK;
+  uartData.workTypeArray[2] = ANGLE_CHECK;
+  uartData.workTypeArray[3] = TEMPERATURE_CHECK;
+	TIM4Init();
+	UART1Init();
+	wwdgInit();
   
   while (1)
   {
+		IWDG_ReloadCounter();
+		
+		ModBusCheck();
 		
 	  if(mainT_state.t10ms_flag == enFlag)
 	  {
@@ -64,35 +74,47 @@ int main(void)
 		  {
 			  rx3Flag = rstFlag;
 			  fucFlag = UartRcvHandle(&rxBuf3[0],rxLength3,&uartData);
-			  if(fucFlag == enFlag)//需要回复
-			  {
-					
-			  }
+//			  if(fucFlag == enFlag)//需要回复  需要下发控制命令给STM32从机，就完成任务了
+//			  {
+//					if(uartData.angleCalibration[0] == enFlag)
+//					{
+//						UartTxHandle(SLAVE_UART,&txBuf2[0],&uartData);
+//					}
+//			  }
 		  }
 	  }
 	  if(mainT_state.t100ms_flag == enFlag)//实际是100ms
 	  {
 		  mainT_state.t100ms_flag = rstFlag;
-		  if(uartData.slaveTransFlag == enFlag)
+		  if(uartData.angleCalibration[0] == enFlag)
 		  {
-			  if(slaveTopCtrl(&uartData,&txBuf2[0]) == enFlag)//发送完成，且等待回复超时了，则直接回复给上位机信息
-			  {
-				  UartTxHandle(MASTER_UART,&txBuf3[0],&uartData);
-				  if(SLAVE_MAXNUM > 48)//当从机数量大于了48，则数据分两段发送
-				  {
-					 //延迟100ms
-					  myDelay_ms(10);
-					  UartTxHandle(MASTER_UART,&txBuf3[0],&uartData);
-				  }
-				  uartData.slaveTypeCheckFlag ++;
-				  uartData.crntHandleSlaveNum = 0;
-				  if(uartData.workTypeArray[uartData.slaveTypeCheckFlag] == 0)//没有待轮询工作的从机类型了
-				  {
-					  uartData.slaveTransFlag = rstFlag;//轮询结束了，等待下一次轮询间隔到
-					  uartData.slaveTypeCheckFlag = 0;
-				  }
-			  }
+			  UartTxHandle(SLAVE_UART,&txBuf2[0],&uartData);
 		  }
+			else
+			{
+				if(uartData.slaveTransFlag == enFlag)
+				{
+					if(slaveTopCtrl(&uartData,&txBuf2[0]) == enFlag)//发送完成，且等待回复超时了，则直接回复给上位机信息
+					{
+						UartTxHandle(MASTER_UART,&txBuf3[0],&uartData);
+						if(SLAVE_MAXNUM > 48)//当从机数量大于了48，则数据分两段发送
+						{
+						 //延迟100ms
+							myDelay_ms(10);
+							UartTxHandle(MASTER_UART,&txBuf3[0],&uartData);
+						}
+						uartData.slaveTypeCheckFlag ++;
+						uartData.crntHandleSlaveNum = 0;
+						uartData.slaveTransFlag = rstFlag;//轮询结束了，等待下一次轮询间隔到
+						if(uartData.workTypeArray[uartData.slaveTypeCheckFlag] == 0)//没有待轮询工作的从机类型了
+						{
+
+							uartData.slaveTypeCheckFlag = 0;
+						}
+					}
+				}
+			}
+		  
 
 		  
 	  }

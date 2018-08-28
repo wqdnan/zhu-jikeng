@@ -27,7 +27,7 @@ void regularTimeDo(uartCtntStruct * uartData)
 {
 	uint8_t i = 0;
 	uint8_t j = 0;
-	static const uint8_t CHECK_DATA_TIME = 5-1;
+	static const uint8_t CHECK_DATA_TIME = 3-1;
 	static const uint8_t MOBILE_DATA_TIME = 5-1;
 	static uint8_t checkDataCnt = 0;
 	static uint8_t mobileDataCnt = 0;
@@ -42,8 +42,12 @@ void regularTimeDo(uartCtntStruct * uartData)
 		{
 			//先清零之前的倾角传感器数据中的值，全部
 			for(i=0;i<SLAVE_MAXNUM;i++)
-				for(j=0;j<ANGLE_CHECK_NUM;j++)
+				for(j=0;j<(ANGLE_CHECK_NUM*2);j++)
+				{
+					uartData->angleXYReal[i][j++] = 0;
 					uartData->angleXYReal[i][j] = 0;
+				}
+
 		}
 	}
 	if(mobileDataCnt < MOBILE_DATA_TIME)
@@ -100,9 +104,14 @@ e_state setParaData(uartCtntStruct * uartData)
 			uartData->strainFreReal[uartData->crntSlaveNum-1][0] = uartData->rxFrameCtnt[0]*100+uartData->rxFrameCtnt[1];
 			uartData->strainFreReal[uartData->crntSlaveNum-1][1] = uartData->rxFrameCtnt[2]*100+uartData->rxFrameCtnt[3];
 			break;
+		case TEMPERATURE_CHECK:
+			uartData->tprtureReal[uartData->crntSlaveNum-1][0] = uartData->rxFrameCtnt[0]*100+uartData->rxFrameCtnt[1];
+		uartData->tprtureReal[uartData->crntSlaveNum-1][1] = uartData->rxFrameCtnt[2]*100+uartData->rxFrameCtnt[3];
+			break;
 		}
 	}
-	if(uartData->slaveType == uartData->workTypeArray[uartData->slaveTypeCheckFlag])//修改为当前接收的帧为倾角模块的数据帧，则做单独回复，其他类型做统一一次性回复
+//	if(uartData->slaveType == uartData->workTypeArray[uartData->slaveTypeCheckFlag])//修改为当前接收的帧为倾角模块的数据帧，则做单独回复，其他类型做统一一次性回复
+	if((uartData->crntSlaveNum >= SLAVE_MAXNUM)||(ANGLE_TYPE == uartData->workTypeArray[uartData->slaveTypeCheckFlag]))//修改为当前接收的帧为倾角模块的数据帧，则做单独回复，其他类型做统一一次性回复
 	{
 		result = enFlag;
 		uartData->fucNum = 0x14;//准备回复DSP功能数据
@@ -117,12 +126,15 @@ e_state setParaData(uartCtntStruct * uartData)
   */
 e_state setCtrlData(uartCtntStruct * uartData)
 {
+	e_state result = rstFlag;
 	uint8_t i = 0;
-	for(i=0; i<uartData->rxFrameCtntNum; i++)
-	{
-		uartData->relayState[i] = uartData->rxFrameCtnt[i];
-	}
-	return rstFlag;
+//	for(i=0; i<uartData->rxFrameCtntNum; i++)
+//	{
+//		uartData->relayState[i] = uartData->rxFrameCtnt[i];
+//	}
+	if(uartData->angleCalibration[0]==enFlag)
+		result = enFlag;
+	return result;
 }
 /**
   * @brief  串口向wifi模块发送数据帧，不需要回复，ASCII码方式
@@ -196,6 +208,7 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 	//根据标志位进行数据帧准备
 	switch(uartData->fucNum)
 	{
+
 		case 0x14:
 		{
 			if(uartData->frameTypeFlag == FIRST_HALF)
@@ -253,7 +266,21 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 					}
 					uartData->crntHandleSlaveNum = 0x20;
 					break;
+				case TEMPERATURE_CHECK:
+					for(i=0; i<cnt_num; i++)
+					{
+						uartData->txFrameCtnt[bias] =    (uartData->tprtureReal[i][0]/1000%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->tprtureReal[i][0]/100%10);
+						uartData->txFrameCtnt[bias] =    (uartData->tprtureReal[i][0]/10%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->tprtureReal[i][0]%10);
+						uartData->txFrameCtnt[bias] =    (uartData->tprtureReal[i][1]/1000%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->tprtureReal[i][1]/100%10);
+						uartData->txFrameCtnt[bias] =    (uartData->tprtureReal[i][1]/10%10)<<4;
+						uartData->txFrameCtnt[bias++] += (uartData->tprtureReal[i][1]%10);
+					}
+					break;
 				}
+
 			}
 			else if(uartData->frameTypeFlag == SECOND_HALF)
 			{
@@ -274,6 +301,13 @@ e_state UartTxFctnCtntHandle(uartCtntStruct * uartData)
 			}
 			uartData->txFrameCtntNum = bias;
 			uartData->masterNum = 0;
+			result = enFlag;
+			break;
+		}
+		case 0x11://倾角标定 ，需要重新发送标定命令给STM32从机
+		{
+			uartData->txFrameCtnt[bias++] = uartData->angleCalibration[1];
+			uartData->txFrameCtntNum = bias;
 			result = enFlag;
 			break;
 		}
@@ -313,7 +347,14 @@ void UartTxHandle(USART_TypeDef* USARTx,uint8_t * txStr,uartCtntStruct * uartDat
 	fucFlag = UartTxFctnCtntHandle(uartData);
 	if(fucFlag == enFlag)
 	{
-		getDataToFrame(&txStr[0],&txLength,\
+		if(uartData->angleCalibration[0]==enFlag)
+		{
+			uartData->angleCalibration[0] = rstFlag;
+			getDataToFrame(&txStr[0],&txLength,\
+					0x0D,0,ANGLE_TYPE,0,uartData->txFrameCtntNum,&uartData->txFrameCtnt[0]);
+		}
+		else
+			getDataToFrame(&txStr[0],&txLength,\
 				       uartData->fucNum,uartData->masterNum,uartData->workTypeArray[uartData->slaveTypeCheckFlag],uartData->crntHandleSlaveNum,\
 				       uartData->txFrameCtntNum,&uartData->txFrameCtnt[0]);
 		SendStr(USARTx,&txStr[0],txLength);

@@ -30,3 +30,6 @@
 .\stm3210e-eval\tim.o: ..\..\..\Libraries\STM32F10x_StdPeriph_Driver\inc\stm32f10x_wwdg.h
 .\stm3210e-eval\tim.o: ..\..\..\Libraries\STM32F10x_StdPeriph_Driver\inc\misc.h
 .\stm3210e-eval\tim.o: ..\User\main.h
+.\stm3210e-eval\tim.o: ..\Modbus\ModBus.h
+.\stm3210e-eval\tim.o: ..\Modbus\CRCtable.h
+.\stm3210e-eval\tim.o: ..\Modbus\ModBus_bsp.h

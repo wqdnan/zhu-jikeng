@@ -3,7 +3,8 @@
 ***************yling&swei slave V (author wqdnan) ********************
 ***************yling&swei slave V (author wqdnan) ********************
 ***************yling&swei slave V (author wqdnan) ********************
-***************yling&swei slave V (author wqdnan) ********************
+***************yling&swei slave V1.01 (author wqdnan) ********************
+1.修正了上位机和主机之间应力上传，现在是应力两个通道的数据都上传
 ***************yling&swei&qjiao&wdu master V1.0 (author wqdnan) ********************
 1. 与四个类型从机进行互联通信
 2. 与上位机进行联调，测试中
